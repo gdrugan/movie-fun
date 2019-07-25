@@ -1,1 +1,10 @@
 movie-fun codebase
+
+
+    <th style="width: 120px;">
+
+
+
+
+            <a class="btn btn-primary" href="?action=Clean">Remove All</a>
+            </th>

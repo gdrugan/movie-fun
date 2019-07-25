@@ -49,17 +49,21 @@
 <div class="container">
 
     <h1>Moviefun</h1>
-
+    <jsp:include page="../messages.jsp" flush="true"/>
     <form class="movie-input-form form-inline" action="moviefun"
           method="post">
         <p>Add Movie</p>
-        <input type="text" name="title" placeholder="Title" size="29"/> <input
-            type="text" name="director" placeholder="Director" size="17"/> <input
-            type="text" name="genre" placeholder="Genre" size="14"/> <input
-            type="text" name="rating" placeholder="Rating" size="7"/> <input
-            type="text" name="year" placeholder="Year" size="4"
-            style="width: 110px;"/> <input type="submit" name="action"
-                                           class="btn btn-primary" value="Add"/>
+        <input type="text" name="title" placeholder="Title" size="29" value="${title}"/>
+        <input type="text" name="director" placeholder="Director" size="17" value="${director}"/>
+        <input type="text" name="genre" placeholder="Genre" size="14" value="${genre}"/>
+        <input type="text" name="rating" placeholder="Rating" size="7" value="${rating}"/>
+        <input type="text" name="year" placeholder="Year" size="4" style="width: 110px;" value="${year}"/>
+        <input type="submit" name="action" class="btn btn-primary" value="Add"/>
+        ${sessionScope.remove("title")}
+        ${sessionScope.remove("director")}
+        ${sessionScope.remove("genre")}
+        ${sessionScope.remove("rating")}
+        ${sessionScope.remove("year")}
     </form>
 
     <table class="table table-striped table-bordered">
@@ -70,7 +74,11 @@
             <th>Genre</th>
             <th>Rating</th>
             <th>Year</th>
-            <th>&nbsp;</th>
+            <c:if test="${count > 0}">
+                <th style="width: 120px;text-align: center">
+                    <a class="btn btn-primary" href="?action=Clean">Remove All</a>
+                </th>
+            </c:if>
         </tr>
         </thead>
         <tbody>
@@ -81,11 +89,18 @@
                 <td><c:out value="${movie.genre}"/></td>
                 <td><c:out value="${movie.rating}"/></td>
                 <td><c:out value="${movie.year}"/></td>
-                <td><a href="?action=Remove&id=${movie.id}"><i
+                <td style="text-align: center"><a href="?action=Remove&id=${movie.id}"><i
                         class="icon-trash"></i></a></td>
             </tr>
         </c:forEach>
         </tbody>
+        <c:if test="${count eq 0}">
+            <tr class="">
+                <td colspan="5" style="text-align: center">
+                    No movies have been found in the database. Try adding a new one <i class="icon-heart"></i>
+                </td>
+            </tr>
+        </c:if>
     </table>
     <c:if test="${count > 0}">
         <c:if test="${page > 1}">

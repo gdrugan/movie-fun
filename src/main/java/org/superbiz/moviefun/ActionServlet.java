@@ -52,15 +52,61 @@ public class ActionServlet extends HttpServlet {
         String action = request.getParameter("action");
 
         if ("Add".equals(action)) {
-            String title = request.getParameter("title");
-            String director = request.getParameter("director");
-            String genre = request.getParameter("genre");
-            int rating = Integer.parseInt(request.getParameter("rating"));
-            int year = Integer.parseInt(request.getParameter("year"));
+            String message = null;
+            for (int i = 0; i <= 0; i++) {
+                String title = request.getParameter("title");
+                request.getSession().setAttribute("title", request.getParameter("title"));
+                if (StringUtils.isEmpty(title)) {
+                    message = "You must add a title!";
+                    break;
+                }
+                String director = request.getParameter("director");
+                request.getSession().setAttribute("director", request.getParameter("director"));
+                if (StringUtils.isEmpty(director)) {
+                    message = "You must add a director!";
+                    break;
+                }
+                String genre = request.getParameter("genre");
+                request.getSession().setAttribute("genre", request.getParameter("genre"));
+                if (StringUtils.isEmpty(genre)) {
+                    message = "You must add a genre!";
+                    break;
+                }
+                int rating = 0;
+                try {
+                    request.getSession().setAttribute("rating", request.getParameter("rating"));
+                    rating = Integer.parseInt(request.getParameter("rating"));
+                } catch (Exception e) {
+                    if (StringUtils.isEmpty(request.getParameter("rating"))) {
+                        message = "You must add a rating!";
+                        break;
+                    }
+                    message = "Invalid rating score!";
+                    break;
+                }
+                int year = 0;
+                try {
+                    request.getSession().setAttribute("year", request.getParameter("year"));
+                    year = Integer.parseInt(request.getParameter("year"));
+                } catch (Exception e) {
+                    if (StringUtils.isEmpty(request.getParameter("year"))) {
+                        message = "You must add a year!";
+                        break;
+                    }
+                    message = "Invalid year!";
+                    break;
+                }
 
-            Movie movie = new Movie(title, director, genre, rating, year);
-
-            moviesBean.addMovie(movie);
+                Movie movie = new Movie(title, director, genre, rating, year);
+                moviesBean.addMovie(movie);
+                request.getSession().setAttribute("infoMessage", "Movie added successfully.");
+                request.getSession().removeAttribute("title");
+                request.getSession().removeAttribute("director");
+                request.getSession().removeAttribute("genre");
+                request.getSession().removeAttribute("rating");
+                request.getSession().removeAttribute("year");
+            }
+            request.getSession().setAttribute("errorMessage", message);
             response.sendRedirect("moviefun");
             return;
         } else if ("Remove".equals(action)) {
@@ -68,7 +114,13 @@ public class ActionServlet extends HttpServlet {
             for (String id : ids) {
                 moviesBean.deleteMovieId(new Long(id));
             }
+            request.getSession().setAttribute("infoMessage", "Movie has been deleted.");
+            response.sendRedirect("moviefun");
+            return;
 
+        } else if ("Clean".equals(action)) {
+            moviesBean.clean();
+            request.getSession().setAttribute("infoMessage", "All movies have been deleted.");
             response.sendRedirect("moviefun");
             return;
 
