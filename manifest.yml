@@ -1,0 +1,11 @@
+applications:
+  - name: moviefun
+    path: ./target/moviefun.war
+    buildpack: https://github.com/cloudfoundry-community/tomee-buildpack/releases/download/v4.16.1/tomee-buildpack-v4.16.1.zip
+    routes:
+      - route: moviefun-a1.apps.sv-pcf-pas.pcf.softvision.ro
+    memory: 768M
+    disk_quota: 512M
+    instances: 1
+    services:
+      - movies-mysql
