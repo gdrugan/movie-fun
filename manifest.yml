@@ -1,0 +1,12 @@
+applications:
+  - name: moviefun
+    path: ./target/moviefun.war
+    routes:
+      - route: moviefun-a1.apps.sv-pcf-pas.pcf.softvision.ro
+    memory: 768M
+    disk_quota: 512M
+    instances: 1
+    env:
+      JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 1.8.+ } }'
+    services:
+      - movies-mysql
