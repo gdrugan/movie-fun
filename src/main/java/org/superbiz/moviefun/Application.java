@@ -1,11 +1,26 @@
 package org.superbiz.moviefun;
 
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.orm.jpa.JpaTransactionManager;
+import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.transaction.PlatformTransactionManager;
 
-@SpringBootApplication
+import javax.persistence.EntityManagerFactory;
+import javax.sql.DataSource;
+
+@SpringBootApplication(exclude = {
+        DataSourceAutoConfiguration.class,
+        HibernateJpaAutoConfiguration.class
+})
 public class Application {
 
     public static void main(String[] args) {
@@ -15,5 +30,66 @@ public class Application {
     @Bean
     public ServletRegistrationBean actionServletRegistration(ActionServlet actionServlet) {
         return new ServletRegistrationBean(actionServlet, "/moviefun/*");
+    }
+
+    @Bean
+    public DatabaseServiceCredentials databaseServiceCredentials(@Value("${vcap.services}") String vcapServicesJson){
+        return new DatabaseServiceCredentials(vcapServicesJson);
+    }
+
+    @Bean
+    public DataSource moviesDataSource(DatabaseServiceCredentials serviceCredentials) {
+        HikariDataSource hikariDataSource = new HikariDataSource();
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setURL(serviceCredentials.jdbcUrl("movies-mysql"));
+        hikariDataSource.setDataSource(dataSource);
+        return hikariDataSource;
+    }
+
+    @Bean
+    public DataSource albumsDataSource(DatabaseServiceCredentials serviceCredentials) {
+        HikariDataSource hikariDataSource = new HikariDataSource();
+        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setURL(serviceCredentials.jdbcUrl("albums-mysql"));
+        hikariDataSource.setDataSource(dataSource);
+        return hikariDataSource;
+    }
+
+    @Bean
+    public HibernateJpaVendorAdapter hibernateJpaVendorAdapter() {
+        HibernateJpaVendorAdapter hibernateJpaVendorAdapter = new HibernateJpaVendorAdapter();
+        hibernateJpaVendorAdapter.setGenerateDdl(true);
+        hibernateJpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.MySQL5Dialect");
+        return hibernateJpaVendorAdapter;
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean moviesEntityManagerFactoryBean(DataSource moviesDataSource, HibernateJpaVendorAdapter hibernateJpaVendorAdapter) {
+        LocalContainerEntityManagerFactoryBean mfb= new LocalContainerEntityManagerFactoryBean();
+        mfb.setDataSource(moviesDataSource);
+        mfb.setJpaVendorAdapter(hibernateJpaVendorAdapter);
+        mfb.setPackagesToScan("org.superbiz.moviefun.movies");
+        mfb.setPersistenceUnitName("movies-unit");
+        return mfb;
+    }
+
+    @Bean
+    public LocalContainerEntityManagerFactoryBean albumsEntityManagerFactoryBean(DataSource albumsDataSource, HibernateJpaVendorAdapter hibernateJpaVendorAdapter) {
+        LocalContainerEntityManagerFactoryBean afb= new LocalContainerEntityManagerFactoryBean();
+        afb.setDataSource(albumsDataSource);
+        afb.setJpaVendorAdapter(hibernateJpaVendorAdapter);
+        afb.setPackagesToScan("org.superbiz.moviefun.albums");
+        afb.setPersistenceUnitName("albums-unit");
+        return afb;
+    }
+
+    @Bean
+    public PlatformTransactionManager moviesPlatformTransactionManager(EntityManagerFactory moviesEntityManagerFactoryBean) {
+        return new JpaTransactionManager(moviesEntityManagerFactoryBean);
+    }
+
+    @Bean
+    public PlatformTransactionManager albumsPlatformTransactionManager(EntityManagerFactory albumsEntityManagerFactoryBean) {
+        return new JpaTransactionManager(albumsEntityManagerFactoryBean);
     }
 }

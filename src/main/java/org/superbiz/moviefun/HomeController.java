@@ -1,6 +1,10 @@
 package org.superbiz.moviefun;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.superbiz.moviefun.albums.Album;
 import org.superbiz.moviefun.albums.AlbumFixtures;
@@ -18,12 +22,16 @@ public class HomeController {
     private final AlbumsBean albumsBean;
     private final MovieFixtures movieFixtures;
     private final AlbumFixtures albumFixtures;
+    private final TransactionTemplate albumsTransactionTemplate;
+    private final TransactionTemplate moviesTransactionTemplate;
 
-    public HomeController(MoviesBean moviesBean, AlbumsBean albumsBean, MovieFixtures movieFixtures, AlbumFixtures albumFixtures) {
+    public HomeController(MoviesBean moviesBean, AlbumsBean albumsBean, MovieFixtures movieFixtures, AlbumFixtures albumFixtures, PlatformTransactionManager albumsPlatformTransactionManager, PlatformTransactionManager moviesPlatformTransactionManager) {
         this.moviesBean = moviesBean;
         this.albumsBean = albumsBean;
         this.movieFixtures = movieFixtures;
         this.albumFixtures = albumFixtures;
+        this.albumsTransactionTemplate = new TransactionTemplate(albumsPlatformTransactionManager);
+        this.moviesTransactionTemplate = new TransactionTemplate(moviesPlatformTransactionManager);
     }
 
     @GetMapping("/")
@@ -34,16 +42,36 @@ public class HomeController {
     @GetMapping("/setup")
     public String setup(Map<String, Object> model) {
         for (Movie movie : movieFixtures.load()) {
-            moviesBean.addMovie(movie);
+            addMovie(movie);
         }
 
         for (Album album : albumFixtures.load()) {
-            albumsBean.addAlbum(album);
+            addAlbum(album);
         }
 
         model.put("movies", moviesBean.getMovies());
         model.put("albums", albumsBean.getAlbums());
 
         return "setup";
+    }
+
+    public void addAlbum(Album album) {
+        albumsTransactionTemplate.execute(new TransactionCallback() {
+            // the code in this method executes in a transactional context
+            public Object doInTransaction(TransactionStatus status) {
+                albumsBean.addAlbum(album);
+                return album;
+            }
+        });
+    }
+
+    public void addMovie(Movie movie) {
+        moviesTransactionTemplate.execute(new TransactionCallback() {
+            // the code in this method executes in a transactional context
+            public Object doInTransaction(TransactionStatus status) {
+                moviesBean.addMovie(movie);
+                return movie;
+            }
+        });
     }
 }
